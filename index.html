@@ -7,7 +7,7 @@
 		<title>reveal.js</title>
 
 		<link rel="stylesheet" href="css/reveal.css">
-		<link rel="stylesheet" href="css/theme/black.css">
+		<link rel="stylesheet" href="css/theme/blood.css">
 
 		<!-- Theme used for syntax highlighting of code -->
 		<link rel="stylesheet" href="lib/css/zenburn.css">
@@ -24,8 +24,425 @@
 	<body>
 		<div class="reveal">
 			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
+				<section>
+					<h4>Practical Object Oriented Design in Ruby</h4>
+					<a data-flickr-embed="true"  href="https://www.flickr.com/photos/mariocarrion/19112724844" title="Practical Object Oriented Design in Ruby by Sandi Metz"><img src="https://farm1.staticflickr.com/399/19112724844_8b40af665a_k.jpg" width="2048" height="2048" alt="Practical Object Oriented Design in Ruby by Sandi Metz"></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script></section>
+				<section>
+					<h2>We need to change our thinking about software.</h2>
+					<p>Our REAL jobs are NOT programming. It's actually futureproofing!</p>
+				</section>
+				<section>
+					<section id="fragments">
+						<h2>What is good design?</h2>
+						<p class="fragment">
+							Good Design is DIRECTLY correlated with the capacity of an application to deal with Change
+						</p>
+					</section>
+					<section>
+					<h2>What's wrong with this picture?</h2>
+					<pre><code class="hljs" data-trim contenteditable>
+						class Exchange
+						  include Mongoid::Document
+						  include Mongoid::Timestamps
+
+						  field :name
+						  field :bidder_value
+
+						  field :formats, type: Array
+						  field :device_types, type: Array
+						end
+					</code></pre>
+					<p class="fragment">name and bidder value indicate same thing.</p>
+					<p class="fragment">name is VIEW logic.</p>
+					</section>
+					<section>
+						<p>What about this one? (from packages/details/new-form.jsx)</p>
+						<pre><code class="hljs" data-trim contenteditable>
+					render() {
+					    if (this.state.campaign === null) return <GoldProgressCircle />;
+
+					    const { classes, campaignId } = this.props;
+					    let { startDate, endDate } = this.state.campaign.attributes;
+					    startDate = moment(startDate).toDate();
+					    endDate = moment(endDate).toDate();
+
+					    const pkg = {
+					      attributes: {
+					        campaignId,
+					        flight: {
+					          startDate,
+					          endDate,
+					        },
+					        pricing: {
+					          type: 'unit',
+					          budget: 0,
+					          unitPrice: 0,
+					          pricingModel: 'cpm',
+					        },
+					        useIasQePixel: true,
+					      },
+					    };
+					    return (
+					      <React.Fragment>
+					        <div className={classes.form} >
+					          <Form
+					            pkg={pkg}
+					            savePackage={createPackage}
+					            newOrEdit="new"
+					            onCancelClick={this.onCancelClick}
+					            afterSaveSuccess={this.afterSaveSuccess}
+					            successMessage={this.successMessage}
+					          />
+					        </div>
+					      </React.Fragment>
+					    );
+					  }
+					}
+
+					</code></pre>
+					<p class="fragment">const pkg looks very much shaped like a MODEL.</p>
+					<p class="fragment">Does that belong in a render function?</p>
+					</section>
+
+					<section>
+						<h2>Maybe we need...</h2>
+						<h2 class="fragment">Javascript models?</h2>
+						<iframe class="fragment" src="https://giphy.com/embed/xqjZLKH1iTBe0" width="480" height="320" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+
+					</section>
+
+					<section>
+						<h2>Javascript Models: Our ViewModel</h2>
+						<img class="fragment" src="https://raw.githubusercontent.com/blkbrds/arch-mvvm-ios/1.1.0/images/interactor.png"/>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>What do Javascript Models offer us?</h2>
+						<p class="fragment">Basically a lot of things...</p>
+						<ol class="fragment">
+							<li>A wrapper for all JSON API responses</li>
+							<li>Type validations on front end</li>
+							<li>Helps maintain SRP</li>
+							<li>Maintainable Jest tests</li>
+							<li>DRY methods that we didn't even know we need</li>
+							<li>encapsulate and abstract service methods</li>
+							<li>And more to be discovered...</li>
+						</ol>
+					</section>
+					<section>
+						<h4>This is our Package.js model...</h4>
+						<pre><code class="hljs" data-trim contenteditable>
+							// @flow
+							import Placement from './placement';
+							import TargetingRule from './targeting-rule';
+
+							type Attributes = {
+							  name: string,
+							  budget: number,
+							  flight: {
+							    startDate: Date,
+							    endDate: Date,
+							  },
+							  campaignId: string,
+							  cpm: number,
+							  creativeId: ?string,
+							  pricingModel: string,
+							  placementCount: number,
+							  unitPrice: number,
+							  adEnvironmentTargetingRule: TargetingRule,
+							  placements: Array<Placement>,
+							};
+
+							type Included = Array<Placement>;
+
+							type PackageData = {
+							  data: {
+							    attributes: Attributes,
+							  },
+							  included: Included,
+							};
+
+							class Package {
+							  constructor({
+							    data: {
+							      id,
+							      attributes: {
+							        name,
+							        budget,
+							        flight: { startDate, endDate },
+							        campaignId,
+							        active,
+							        activatable,
+							        cpm,
+							        pricingModel,
+							        placementCount,
+							        unitPrice,
+							        adEnvironmentTargetingRule: { adEnvironments, inheritedFrom },
+							      },
+							    },
+							    included: placements,
+							  }: PackageData) {
+							    this.id = id;
+							    this.name = name;
+							    this.budget = budget;
+							    this.startDate = startDate;
+							    this.endDate = endDate;
+							    this.campaignId = campaignId;
+							    this.active = active;
+							    this.activatable = activatable;
+							    this.cpm = cpm;
+							    this.pricingModel = pricingModel;
+							    this.placementCount = placementCount;
+							    this.placements = placements.map(placement => new Placement({ data: placement }));
+							    this.unitPrice = unitPrice;
+							    this.targetableType = 'package';
+							    this.adEnvironmentTargetingRule = TargetingRule
+							      .adEnvironment(
+							        this.id, this.targetableType, adEnvironments, inheritedFrom,
+							      );
+							  }
+							}
+
+							export default Package;
+						</code></pre>
+						<p>Flow allows us to typecheck all instances of Package</p>
+						<p>All we need to do is pass the JSON response into a new Package.</p>
+					</section>
+
+					<section>
+						<h3>Targeting-rule.js</h3>
+						<pre><code class="hljs" data-trim contenteditable>
+						// Instance methods
+
+					  isAll() {
+					    return this.ruleOptions.length === this.ruleSelections.length;
+					  }
+
+					  labelize() {
+					    return this.ruleSelections.map(value => this.optionsMap[value]);
+					  }
+
+					  summarize() {
+					    if (this.ruleOptions.length === this.ruleSelections.length) return ['All environments'];
+					    return this.labelize();
+					  }
+
+					  isInherited() {
+					    return this.inheritedType === this.parentType;
+					  }
+ 					 </code></pre>
+ 					 <p>These methods are used in EVERY single targeting rule component</p>
+ 					 <p>But now it's all in once place... Very DRY.</p>
+					</section>
+
+					<section>
+						<h3>EZ tests</h3>
+						<pre><code class="hljs" data-trim contenteditable>
+						import TargetingRule from './targeting-rule';
+
+						describe('Targeting Rule', () => {
+
+						  describe('Ad Environmment not All', () => {
+						    let rule;
+
+						    beforeEach(() => {
+						      rule = TargetingRule.adEnvironment('id12345', 'placement', { adEnvironments: ['app'] });
+						    });
+
+						    it('should instantiate an ad environment targeting rule', () => {
+						      expect(rule.ruleType).toEqual('adEnvironment');
+						    });
+
+						    it('should return the labelized array', () => {
+						      expect(rule.labelize()).toEqual(['In-App']);
+						    });
+
+						    it('should return isAll as false if all options are not available', () => {
+						      expect(rule.isAll()).toEqual(false);
+						    });
+
+						    it('should properly set new', () => {
+						      rule.setRuleSelections(['app', 'site']);
+						      expect(rule.ruleSelections).toEqual(['app', 'site']);
+						      expect(rule.isEdited).toEqual(true);
+						    });
+						  });
+
+						  describe('Ad Environment All tests', () => {
+						    let rule;
+
+						    beforeEach(() => {
+						      rule = TargetingRule.adEnvironment('id12345', 'package', { adEnvironments: ['all'] });
+						    });
+
+						    it('should return isAll as true if all options selected', () => {
+						      expect(rule.isAll()).toEqual(true);
+						    });
+
+						    it('should contain all rule options instead of keyword all from the server when instantiated.', () => {
+						      expect(rule.ruleOptions).toEqual(['site', 'app']);
+						    });
+						  });
+
+						  describe('Device Type', () => {
+						    it('should instantiate a device type targeting rule', () => {
+						      const dtTargetingRule = TargetingRule.deviceType({ deviceTypes: ['Computer'], inheritedFrom: 'package' });
+						      expect(dtTargetingRule.ruleType).toEqual('deviceType');
+						    });
+						  });
+						});
+ 					 </code></pre>
+ 					 <p>Jest tests with React components are confusing... Test model functionality instead. Maintainable and easy to write.</p>
+					</section>
+					<section>
+					<p>Use Models to remove formatting logic.</p>
+					<pre><code class="hljs" data-trim contenteditable>
+						save() {
+					    if (this.isNew) {
+					      this.update();
+					    } else {
+					      this.create();
+					    }
+					  }
+
+					  create() {
+					    return createTargetingRule(this.targetableType, this.shapeForBackEnd());
+					  }
+
+					  update() {
+					    return updateTargetingRuleStandalone(this.targetableId, this.targetableType, this.shapeForBackEnd());
+					  }
+
+					  delete() {
+					    return destroyTargetingRule(this.targetableId, 'placement', this.ruleType);
+					  }
+
+					  persist(saveable) {
+					    if (saveable) {
+					      this.save();
+					    } else {
+					      this.delete();
+					    }
+					  }
+
+					  shapeForBackEnd() {
+					    const shapedJSON = {
+					      type: `${this.ruleType}TargetingRule`,
+					      adEnvironments: this.ruleSelections,
+					    };
+
+					    return shapedJSON;
+					  }
+ 					 </code></pre>
+ 					 <p>With models, we can keep Services far away from components.</p>
+				</section>
+				</section>
+
+
+				<section>
+					<section>
+						<h2>Sounds great... But what's the catch?</h2>
+						<iframe class="fragment" src="https://giphy.com/embed/ceUyLAkuV8InK" width="480" height="392" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+					</section>
+					<section>
+						<h3>Unfortunately, It's not all roses...</h3>
+						<iframe class="fragment" src="https://giphy.com/embed/PsBRTPKG71YVq" width="480" height="480" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+					</section>
+					<section>
+						<h2>Some things are not as easy as they sound...</h2>
+						<ol>
+							<li class="fragment">Prototypal Inheritance !== Classical Inheritance</li>
+							<li class="fragment">Model state antipattern?</li>
+						</ol>
+
+					</section>
+					<section>
+						<p>Because of Javascript's prototypal inheritance, </p>
+						<p class="fragment">sometimes we have to use factories instead of classical inheritance. Prototypes can get confusing.</p>
+						<p class="fragment">We can use static methods to achieve this.</p>
+					</section>
+
+					<section>
+						<pre><code class="hljs" data-trim contenteditable>
+							static adEnvironment(
+							    targetableId, targetableType, ruleSelections: Array<string>, inheritedFrom, isNew = false,
+							  ) {
+							    const optionsMap: Object<string> = {
+							      site: 'Web',
+							      app: 'In-App',
+							    };
+							    const ruleOptions: Array<string> = Object.keys(optionsMap);
+
+							    return (Object.assign(new TargetingRule(), {
+							      hasOwnRule: targetableType === inheritedFrom,
+							      isNew,
+							      ruleOptions,
+							      ruleName: 'Ad Environment',
+							      ruleType: 'adEnvironment',
+							      ruleSelections: TargetingRule.isAllFromSelections(ruleSelections) ? ruleOptions : [...ruleSelections],
+							      optionsMap,
+							      parentTargetableType: traverseTargetableHierarchyUp(targetableType),
+							      targetableType,
+							      targetableId,
+							      generateLeftHTML: () => {
+							        return (
+							          <div
+							            style={{ fontStyle: 'italic', fontSize: 'small', color: `${variables.gray400}` }}
+							          >
+							            In-app is only available when targeting mobile device types
+							          </div>
+							        );
+							      },
+							    }));
+							  }
+ 					 </code></pre>
+					</section>
+
+					<section>
+						<p>For some reason,</p>
+						<p class="fragment">When the model is changed on the prop level,</p>
+						<p class="fragment">it doesn't trigger a rerender.</p>
+						<iframe class="fragment" src="https://giphy.com/embed/6agGMtS4rEVSo" width="480" height="360" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+					</section>
+
+					<section>
+						<p>Use JS models as read only for now!</p>
+						<pre><code class="hljs" data-trim contenteditable>
+						handleSave = () => {
+					    const { hasOwnRule: isOverriding, ruleSelections } = this.state;
+					    const { rule, parentRule } = this.props;
+					    const { hasOwnRule: hadOwnRule, targetableId, targetableType } = rule;
+					    const inheritingFrom = isOverriding ? rule.targetableType : parentRule.targetableType;
+
+					    const persistableModel = TargetingRule.adEnvironment(
+					      targetableId, targetableType, ruleSelections, inheritingFrom, !hadOwnRule,
+					    );
+					    persistableModel.persist(isOverriding).then(response => {
+					      console.log(response); // remove
+					      // const saveableModel =  targetable.data
+					      // this.props.receivePlacementModels(saveableModel); // targetable or targetable.data ?
+					      this.handleExpansion();
+					    }).catch(error => { // error model?
+					      const errorMessage = error.response.data.errors[0].detail;
+					      this.setState({ snackBarOpen: true, errorMessage });
+					    });
+					  };
+ 					 </code></pre>
+					</section>
+
+				</section>
+
+				<section>
+					<h2>Thank you!</h2>
+					<iframe src="https://giphy.com/embed/2HONNTJbRhzKE" width="480" height="370" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+				</section>
+
+				<section>
+					Shoutout to Reveal.js... Don't use powerpoint
+					<iframe src="https://giphy.com/embed/1oHmASyOkABYmqecGn" width="480" height="269" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+				</section>
 			</div>
 		</div>
 
