@@ -12,6 +12,8 @@
 		<!-- Theme used for syntax highlighting of code -->
 		<link rel="stylesheet" href="lib/css/zenburn.css">
 
+		<link rel="stylesheet" href="css/custom.css">
+
 		<!-- Printing and PDF exports -->
 		<script>
 			var link = document.createElement( 'link' );
@@ -26,18 +28,86 @@
 			<div class="slides">
 				<section>
 					<h4>Practical Object Oriented Design in Ruby</h4>
-					<a data-flickr-embed="true"  href="https://www.flickr.com/photos/mariocarrion/19112724844" title="Practical Object Oriented Design in Ruby by Sandi Metz"><img src="https://farm1.staticflickr.com/399/19112724844_8b40af665a_k.jpg" width="2048" height="2048" alt="Practical Object Oriented Design in Ruby by Sandi Metz"></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script></section>
-				<section>
-					<h2>We need to change our thinking about software.</h2>
-					<p>Our REAL jobs are NOT programming. It's actually futureproofing!</p>
+					<a data-flickr-embed="true"  href="https://www.flickr.com/photos/mariocarrion/19112724844" title="Practical Object Oriented Design in Ruby by Sandi Metz"><img src="https://farm1.staticflickr.com/399/19112724844_8b40af665a_k.jpg" width="2048" height="2048" alt="Practical Object Oriented Design in Ruby by Sandi Metz"></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script>
 				</section>
+
 				<section>
+					<section>
+						<h4>What is the importance of Software Design?</h4>
+						<p>Seems like a good time to reiterate why we need software design.</p>
+					</section>
+
+					<section>
+						<h3>Inhak in 2016 didn't believe in software design</h3>
+						<img src="assets/maui-inhak.jpg" width="350px" height="350px"/>
+						<p>Inhak with Maui colorized (2016)</p>
+					</section>
+
+					<section>
+						<div class="multi-col">
+
+
+						<div class="col">
+							<img src="assets/maui-inhak.jpg" width="350px" height="350px"/>
+							<p>2016 Inhak</p>
+							<ul class="smaller-ul">
+								<li>Doesn't believe in OOP or good design</li>
+								<li>Life is procedural, why shouldn't code be?</li>
+								<li>Wears boring pajamas</li>
+								<li>Doesn't walk his cat</li>
+							</ul>
+						</div>
+
+						<div class="col">
+							<img src="assets/maui-inhak-2019.png" width="290px" height="380px" />
+							<p>2019 Inhak</p>
+							<ul class="smaller-ul">
+								<li>Believes in OOP and good software design principles</li>
+								<li>Knows that delaying key design decisions provides benefits down the line</li>
+								<li>Wears sick nintendo Gameboy pajamas</li>
+								<li>Walks his cat</li>
+							</ul>
+						</div>
+						</div>
+
+					</section>
+
+					<section id="fragments">
+						<h4>What are some things we can tell 2016 Inhak to convince him of the ways of object oriented design?</h4>
+						<ul>
+							<li class="fragment">OOD is agile</li>
+							<li class="fragment">Think of the future Inhaks and other developers</li>
+							<li class="fragment">"Change always happens in software, "</li>
+							<li class="fragment">Big Up Front Design rarely works</li>
+						</ul>
+					</section>
+
+
 					<section id="fragments">
 						<h2>What is good design?</h2>
 						<p class="fragment">
 							Good Design is DIRECTLY correlated with the capacity of an application to deal with Change
 						</p>
 					</section>
+
+					<section>
+						<h2>We need to change our thinking about software.</h2>
+						<p>Our REAL jobs are NOT programming. It's actually futureproofing!</p>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>Overview of Strategies to better implement Object Oriented Design in Ruby</h2>
+					</section>
+
+					<section>
+						<ol>
+							<li>SOLID principles (a la Kajal and Ian's presentation</li>
+							<li>Gang of Four </li>
+						</ol>
+					</section>
+
 					<section>
 					<h2>What's wrong with this picture?</h2>
 					<pre><code class="hljs" data-trim contenteditable>
