@@ -46,12 +46,18 @@
 
 				<section>
 					<section>
-						<h4>What is the importance of Software Design?</h4>
+						<h4>What is the importance of Object Oriented Design?</h4>
 						<p>Seems like a good time to reiterate why we need software design.</p>
 					</section>
 
+					<section id="fragments">
+						<h4>The importance is that code is unpredictable, and we need a system to organize it.</h4>
+						<p class="fragment">“Object-oriented design requires that you shift from thinking of the world as a collection of predefined procedures to modeling the world as a series of messages that pass between objects.”
+						</p>
+					</section>
+
 					<section>
-						<h3>Inhak in 2016 didn't believe in software design</h3>
+						<h3>Inhak in 2016 didn't believe in OOD</h3>
 						<img src="assets/maui-inhak.jpg" width="350px" height="350px"/>
 						<p>Inhak with Maui colorized (2016)</p>
 					</section>
@@ -87,7 +93,7 @@
 						<ul>
 							<li class="fragment">OOD is agile</li>
 							<li class="fragment">Think of the future Inhaks and other developers</li>
-							<li class="fragment">"Change always happens in software, "</li>
+							<li class="fragment">"Change always happens in software"</li>
 							<li class="fragment">Big Up Front Design rarely works</li>
 						</ul>
 					</section>
@@ -102,21 +108,36 @@
 					<section>
 						<h2>We need to change our thinking about software.</h2>
 						<p>Our REAL jobs are NOT programming. It's actually futureproofing!</p>
+						<p>"You must not only write code for the future you plan to deliver today, you must also create code that is amenable to being changed later. For any period of time that extends past initial delivery of the beta, the cost of change will eventaully eclipse the original cost of the application</p>
 					</section>
-				</section>
 
-				<section>
-					<section>
-						<h2>Overview of Strategies to better implement Object Oriented Design in Ruby</h2>
-					</section>
-					<section>
-						<ol>
+					<section id="fragments">
+						<h4>How do we design software?</h4>
+						<ol class="fragment">
 							<li>SOLID principles (a la Kajal and Ian's presentation)</li>
-							<li>Gang of Four</li>
-							<li>TRUE</li>
-							<li>Managing dependencies</li>
+							<li>Gang of Four design patterns</li>
+							<li>Law of Demeter</li>
+							<li>DRY</li>
 						</ol>
 					</section>
+				</section>
+
+
+				<section>
+					<section>
+						<h2>Designing Classes with Single Responsibility Principle</h2>
+						<p>Possibly one of the most talked about and important principles in software design</p>
+					</section>
+					<section id="fragments">
+						<h4>How do we organize our code into classes and know how to enforce single responsibility?</h4>
+						<p>How about implementing TRUE?</p>
+						<ul class="fragment">
+							<li>Transparent - The consequences of change should be obvious in the code that is changing and in distant code that relies on it</li>
+							<li>Reasonable - The cost of any change should be proportional to the benefits of the change that the change achieves</li>
+							<li>Usable - Existing code should be usable in new and unexpected contexts</li>
+							<li>Exampary - The code itself should encourage those who change it to perpetuate those qualities</li>
+						</ul>
+					</section>
 					<section>
 
 					</section>
@@ -124,11 +145,13 @@
 
 				<section>
 					<section>
-						<h2>Single Responsibility Principle</h2>
-						<p>Possibly one of the most talked about and important principles in software design</p>
+						<h2>Finding Public Interfaces that make sense</h2>
 					</section>
-					<section>
 
+					<section>
+						When you have responsibilities , tell what not HOW. Sandi metz says if a person needs a bicycle,
+						they shouldn't have ot know how to get it, (cleaning, preparing), but should rather interact with the
+						interface to get what it needs.
 					</section>
 				</section>
 
@@ -136,6 +159,7 @@
 					<section>
 						<h2>Using Duck Typing to create elegant design</h2>
 					</section>
+					<section></section>
 				</section>
 
 				<section>
