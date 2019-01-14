@@ -125,7 +125,7 @@
 
 				<section>
 					<section>
-						<h2>Designing Classes with Single Responsibility Principle</h2>
+						<h2>Part 1: Designing Classes with Single Responsibility Principle</h2>
 						<p>Possibly one of the most talked about and important principles in software design</p>
 					</section>
 					<section id="fragments">
@@ -139,9 +139,419 @@
 						</ul>
 					</section>
 					<section>
-
+						<h4>How do we know how to keep Single Responsibility in our code?</h4>
+						<p>Ask yourself this question: What does this class do? If you use the word "and" to describe it, it is doing too much.</p>
+						<p>if you're using the word "or," it does two unrelated things and is still doing too much.</p>
 					</section>
+
+					<section>
+						<pre><code class="hljs" data-trim contenteditable>
+						class Gear
+							attr_reader :chainring, :cog
+
+							def initialize(chainring, cog)
+								@chainring = chainring
+								@cog = cog
+							end
+
+							def ratio
+								chainring / cog.to_f
+							end
+						end
+
+						puts Gear.new(52, 11).ratio      # -> 4.7272727272
+					</code></pre>
+					</section>
+
+					<section>
+						<pre><code class="hljs" data-trim contenteditable>
+						class Gear
+							attr_reader :chainring, :cog, :rim, :tire
+
+							def initialize(chainring, cog, rim, tire)
+								@chainring = chainring
+								@cog = cog
+                @rim = rim
+                @tire = tire
+							end
+
+							def ratio
+								chainring / cog.to_f
+							end
+
+							def gear_inches
+                ratio * (rim + (tire * 2))
+							end
+						end
+
+            puts Gear.new(52, 11, 26, 1.5).gear_inches  # -> 137.09090909
+						puts Gear.new(52, 11).ratio      # -> ArgumentError: wrong number of arguments (2 for 4)
+					</code></pre>
+					</section>
+
+          <section>
+            <h4>What can we do to make this more singularly responsible?</h4>
+            <p>first, we can write code that better embraces change.</p>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+            def cog
+              @cog
+            end
+            </code></pre>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+
+            def gear_inches
+              ratio * (rim + (tire * 2))
+            end
+
+					</code></pre>
+          </section>
+
+          <section>
+            <h4>This is better.</h4>
+            <pre><code class="hljs" data-trim contenteditable>
+
+            def gear_inches
+              ratio * diameter
+            end
+
+            def diameter
+              rim + (tire * 2)
+            end
+					</code></pre>
+          </section>
+
+          <section>
+            <p>"DO these refactorings even when you do not know the ultimate design. They are needed, not because the design is clear, but because it isn't... Good practices reveal design."</p>
+          </section>
+
+          <section id="fragments">
+            <h4>Instead of having Gear have those, let's separate Wheel from it.</h4>
+            <pre class="fragment"><code class="hljs" data-trim contenteditable>
+              class Gear
+                attr_reader :chainring, :cog, :wheel
+
+                def initialize(chainring, cog, rim, tire)
+                  @chainring = chainring
+                  @cog = cog
+                  @wheel = Wheel.new(rim, tire)
+                end
+
+                def ratio
+                  chainring / cog.to_f
+                end
+
+                def gear_inches
+                  ratio * wheel.diameter
+                end
+              end
+
+              class Wheel
+                attr_reader :rim, :tire
+
+                def initialize(rim, tire)
+                  @rim = rim
+                  @tire = tire
+                end
+
+                def diameter
+                  rim + (tire * 2)
+                end
+              end
+
+					</code></pre>
+          </section>
+
+          <section>
+            <h4>Why else makes SRP important?</h4>
+            <ol>
+              <li>prioritizes less entangled classes</li>
+              <li>classes with more than one responsibility are difficult to reuse</li>
+              <li>Prevent behemoth classes from forming</li>
+              <li>methods are easy to move into another class</li>
+              <li>Avoids need for comments</li>
+            </ol>
+
+          </section>
+
+
+          <section>
+            <h4>How would you refactor this?</h4>
+            <pre><code class="hljs" data-trim contenteditable>
+              class MarketSegment
+                belongs_to :product
+
+                def demographics
+                  product.demographic.try(:categories) || []
+                end
+
+                def customer_journeys
+                  product.customer_journey.try(:categories) || []
+                end
+
+                def display_customer_journeys
+                  product.customer_journey.try(:display)
+                end
+              end
+
+					</code></pre>
+          </section>
+
+          <section>
+            <h4>Law of Demeter</h4>
+            <p>Also known as: "only talk to your immediate neighbors" or "use only one dot"</p>
+          </section>
 				</section>
+
+        <section>
+          <section>
+            <h2>Part 2: Managing Dependencies</h2>
+          </section>
+
+          <section id="fragments">
+            <h4>How to recognize when your object has a dependency</h4>
+            <ol>
+              <li>The name of another class is in it.</li>
+              <li>The name of a message that it inteds to send ot someone other than self is in it.</li>
+              <li>The arguments that the message requires has a different class in it.</li>
+              <li>The order of the arguments are set in stone</li>
+            </ol>
+          </section>
+
+          <section>
+            <h4>Classes should strive to be loosely coupled, not coupled close together.</h4>
+            <img src="assets/dependency.jpg" />
+          </section>
+
+          <section>
+            <H4>Time to pick on market segment again</H4>
+            <pre><code class="hljs" data-trim contenteditable>
+            class MarketSegment
+              def is_linked
+                audience_hierarchies = AudienceHierarchy.where(market_segment_id: id)
+                Plan.find_by(audience_hierarchy_id: {"$in"=> audience_hierarchies.map{|ah| ah.id} }).present?
+              rescue Mongoid::Errors::DocumentNotFound
+                SubsegmentOutcome.where(market_segment_id: id).exists?
+              end
+            end
+					</code></pre>
+          <p>Any change in any of these classes would break this class.</p>
+          <p>How would you change it?</p>
+          </section>
+
+          <section>
+            <h4>Option 1: You can inject dependencies</h4>
+            <pre><code class="hljs" data-trim contenteditable>
+            class MarketSegment
+              attr_reader :aud_hierarchy, :plan, :subsegment_outcome
+
+              def initialize(audience_hierarchy, plan, subsegment_outcome)
+                @aud_hierarchy = audience_hierarchy
+                @plan = plan
+                @subsegment_outcome
+              end
+
+              def is_linked
+                audience_hierarchies = aud_hierarchy.where(market_segment_id: id)
+                plan.find_by(audience_hierarchy_id: {"$in"=> audience_hierarchies.map{|ah| ah.id} }).present?
+              rescue Mongoid::Errors::DocumentNotFound
+                subsegment.where(market_segment_id: id).exists?
+              end
+            end
+
+            MarketSegment.new(AudienceHierarchy, Plan, SubsegmentOutcome)
+					</code></pre>
+            <p>This is much more loosely coupled.</p>
+          </section>
+
+          <section>
+            <h4>Option 2: Isolate instance creation</h4>
+            <pre><code class="hljs" data-trim contenteditable>
+            class MarketSegment
+              def aud_hierarchy
+                @aud_hierarchy ||= AudienceHierarchy
+              end
+
+              def plan
+                @plan ||= Plan
+              end
+
+              def subsegment
+                @subsegment = SubsegmentOutcome
+              end
+
+              def is_linked
+                audience_hierarchies = aud_hierarchy.where(market_segment_id: id)
+                plan.find_by(audience_hierarchy_id: {"$in"=> audience_hierarchies.map{|ah| ah.id} }).present?
+              rescue Mongoid::Errors::DocumentNotFound
+                subsegment.where(market_segment_id: id).exists?
+              end
+            end
+					</code></pre>
+          </section>
+
+          <section>
+            <h4>Option 3: Create class method isolations</h4>
+
+            <pre><code class="hljs" data-trim contenteditable>
+            class MarketSegment
+              def aud_hierarchy
+                @aud_hierarchy ||= AudienceHierarchy
+              end
+
+              def plan
+                @plan ||= Plan
+              end
+
+              def subsegment
+                @subsegment = SubsegmentOutcome
+              end
+
+              def hierarchies_by_id
+                aud_hierarchy.where(market_segment_id: id)
+              end
+
+              def subsegment_exists?
+                subsegment.where(market_segment_id: id).exists?
+              end
+
+              def is_linked
+                audience_hierarchies = hierarchy_by_id
+                plan.find_by(audience_hierarchy_id: {"$in"=> audience_hierarchies.map{|ah| ah.id} }).present?
+              rescue Mongoid::Errors::DocumentNotFound
+                subsegment_exists?
+              end
+            end
+            </code></pre>
+          </section>
+
+          <section id="fragments">
+            <h4>Another way to manage dependencies is to remove argument order dependency.</h4>
+            <p>it is a liability when the class takes multiple arguments in order to instantiate.</p>
+            <pre class="fragment"><code class="hljs" data-trim contenteditable>
+              class Wheel
+                attr_reader :rim, :tire
+
+                def initialize(args)
+                  @rim = args[:rim]
+                  @tire = args[tire]
+                end
+
+                def diameter
+                  rim + (tire * 2)
+                end
+              end
+
+              Wheel.new(rim: 20, tire: 20)
+
+					</code></pre>
+            <p class="fragment">This technique adds verbosity. In many situations verbosity is a detriment, but in this case it has value.</p>
+          </section>
+
+          <section>
+            <h4>Explicitly define defaults.</h4>
+            <pre class="fragment"><code class="hljs" data-trim contenteditable>
+              class Wheel
+                attr_reader :rim, :tire
+
+                def initialize(args)
+                  @rim = args[:rim] || 40
+                  @tire = args[:tire] || 10
+                end
+
+                def diameter
+                  rim + (tire * 2)
+                end
+              end
+
+              Wheel.new # Valid!
+
+					</code></pre>
+          </section>
+
+          <section>
+            <h4>If your arguments have boolean values</h4>
+            <pre class="fragment"><code class="hljs" data-trim contenteditable>
+              class Wheel
+                attr_reader :rim, :tire
+
+                def initialize(args)
+                  @rim = args.fetch(:rim, 40)
+                  @tire = args.fetch(:tire, 10)
+                end
+
+                def diameter
+                  rim + (tire * 2)
+                end
+              end
+					</code></pre>
+            <pre class="fragment"><code class="hljs" data-trim contenteditable>
+              class Wheel
+                attr_reader :rim, :tire
+
+                def initialize(args)
+                  args = defaults.merge(args)
+                end
+
+                def defaults
+                  {:rim => 40, :tire => 10}
+                end
+
+                def diameter
+                  rim + (tire * 2)
+                end
+              end
+
+					</code></pre>
+
+          </section>
+
+          <section>
+            <h4>If key order optimizations are out of reach...</h4>
+            <p>You can create a factory to fix the dependency.</p>
+            </code></pre>
+            <pre class="fragment"><code class="hljs" data-trim contenteditable>
+              ### If this class can't be accessed
+              class Wheel
+                attr_reader :rim, :tire
+
+                def initialize(rim, tire)
+                  @rim = rim
+                  @tire = tire
+                end
+              end
+
+              # use this! manages order for you
+              class WheelWrapper
+                def self.wheel(args)
+                  Framework::Wheel(args[:rim], args[:tire]
+                end
+              end
+
+              WheelWrapper.wheel(rim: 40, tire: 10)
+
+					</code></pre>
+          </section>
+
+          <section>
+            
+          </section>
+
+          <section id="fragments">
+            <h4>Sometimes you need to invert dependencies.</h4>
+            <p>Reasons to do dependency inversion:</p>
+            <ol>
+              <li>some classes are more likely than others to have changes in requirement</li>
+            </ol>
+          </section>
+
+
+        </section>
 
 				<section>
 					<section>
@@ -162,406 +572,7 @@
 					<section></section>
 				</section>
 
-				<section>
-					<h2>What's wrong with this picture?</h2>
-					<pre><code class="hljs" data-trim contenteditable>
-						class Exchange
-						  include Mongoid::Document
-						  include Mongoid::Timestamps
 
-						  field :name
-						  field :bidder_value
-
-						  field :formats, type: Array
-						  field :device_types, type: Array
-						end
-					</code></pre>
-					<p class="fragment">name and bidder value indicate same thing.</p>
-					<p class="fragment">name is VIEW logic.</p>
-					</section>
-					<section>
-						<p>What about this one? (from packages/details/new-form.jsx)</p>
-						<pre><code class="hljs" data-trim contenteditable>
-					render() {
-					    if (this.state.campaign === null) return <GoldProgressCircle />;
-
-					    const { classes, campaignId } = this.props;
-					    let { startDate, endDate } = this.state.campaign.attributes;
-					    startDate = moment(startDate).toDate();
-					    endDate = moment(endDate).toDate();
-
-					    const pkg = {
-					      attributes: {
-					        campaignId,
-					        flight: {
-					          startDate,
-					          endDate,
-					        },
-					        pricing: {
-					          type: 'unit',
-					          budget: 0,
-					          unitPrice: 0,
-					          pricingModel: 'cpm',
-					        },
-					        useIasQePixel: true,
-					      },
-					    };
-					    return (
-					      <React.Fragment>
-					        <div className={classes.form} >
-					          <Form
-					            pkg={pkg}
-					            savePackage={createPackage}
-					            newOrEdit="new"
-					            onCancelClick={this.onCancelClick}
-					            afterSaveSuccess={this.afterSaveSuccess}
-					            successMessage={this.successMessage}
-					          />
-					        </div>
-					      </React.Fragment>
-					    );
-					  }
-					}
-
-					</code></pre>
-					<p class="fragment">const pkg looks very much shaped like a MODEL.</p>
-					<p class="fragment">Does that belong in a render function?</p>
-					</section>
-
-					<section>
-						<h2>Maybe we need...</h2>
-						<h2 class="fragment">Javascript models?</h2>
-						<iframe class="fragment" src="https://giphy.com/embed/xqjZLKH1iTBe0" width="480" height="320" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
-
-					</section>
-
-					<section>
-						<h2>Javascript Models: Our ViewModel</h2>
-						<img class="fragment" src="https://raw.githubusercontent.com/blkbrds/arch-mvvm-ios/1.1.0/images/interactor.png"/>
-					</section>
-				</section>
-
-				<section>
-					<section>
-						<h2>What do Javascript Models offer us?</h2>
-						<p class="fragment">Basically a lot of things...</p>
-						<ol class="fragment">
-							<li>A wrapper for all JSON API responses</li>
-							<li>Type validations on front end</li>
-							<li>Helps maintain SRP</li>
-							<li>Maintainable Jest tests</li>
-							<li>DRY methods that we didn't even know we need</li>
-							<li>encapsulate and abstract service methods</li>
-							<li>And more to be discovered...</li>
-						</ol>
-					</section>
-					<section>
-						<h4>This is our Package.js model...</h4>
-						<pre><code class="hljs" data-trim contenteditable>
-							// @flow
-							import Placement from './placement';
-							import TargetingRule from './targeting-rule';
-
-							type Attributes = {
-							  name: string,
-							  budget: number,
-							  flight: {
-							    startDate: Date,
-							    endDate: Date,
-							  },
-							  campaignId: string,
-							  cpm: number,
-							  creativeId: ?string,
-							  pricingModel: string,
-							  placementCount: number,
-							  unitPrice: number,
-							  adEnvironmentTargetingRule: TargetingRule,
-							  placements: Array<Placement>,
-							};
-
-							type Included = Array<Placement>;
-
-							type PackageData = {
-							  data: {
-							    attributes: Attributes,
-							  },
-							  included: Included,
-							};
-
-							class Package {
-							  constructor({
-							    data: {
-							      id,
-							      attributes: {
-							        name,
-							        budget,
-							        flight: { startDate, endDate },
-							        campaignId,
-							        active,
-							        activatable,
-							        cpm,
-							        pricingModel,
-							        placementCount,
-							        unitPrice,
-							        adEnvironmentTargetingRule: { adEnvironments, inheritedFrom },
-							      },
-							    },
-							    included: placements,
-							  }: PackageData) {
-							    this.id = id;
-							    this.name = name;
-							    this.budget = budget;
-							    this.startDate = startDate;
-							    this.endDate = endDate;
-							    this.campaignId = campaignId;
-							    this.active = active;
-							    this.activatable = activatable;
-							    this.cpm = cpm;
-							    this.pricingModel = pricingModel;
-							    this.placementCount = placementCount;
-							    this.placements = placements.map(placement => new Placement({ data: placement }));
-							    this.unitPrice = unitPrice;
-							    this.targetableType = 'package';
-							    this.adEnvironmentTargetingRule = TargetingRule
-							      .adEnvironment(
-							        this.id, this.targetableType, adEnvironments, inheritedFrom,
-							      );
-							  }
-							}
-
-							export default Package;
-						</code></pre>
-						<p>Flow allows us to typecheck all instances of Package</p>
-						<p>All we need to do is pass the JSON response into a new Package.</p>
-					</section>
-
-					<section>
-						<h3>Targeting-rule.js</h3>
-						<pre><code class="hljs" data-trim contenteditable>
-						// Instance methods
-
-					  isAll() {
-					    return this.ruleOptions.length === this.ruleSelections.length;
-					  }
-
-					  labelize() {
-					    return this.ruleSelections.map(value => this.optionsMap[value]);
-					  }
-
-					  summarize() {
-					    if (this.ruleOptions.length === this.ruleSelections.length) return ['All environments'];
-					    return this.labelize();
-					  }
-
-					  isInherited() {
-					    return this.inheritedType === this.parentType;
-					  }
- 					 </code></pre>
- 					 <p>These methods are used in EVERY single targeting rule component</p>
- 					 <p>But now it's all in once place... Very DRY.</p>
-					</section>
-
-					<section>
-						<h3>EZ tests</h3>
-						<pre><code class="hljs" data-trim contenteditable>
-						import TargetingRule from './targeting-rule';
-
-						describe('Targeting Rule', () => {
-
-						  describe('Ad Environmment not All', () => {
-						    let rule;
-
-						    beforeEach(() => {
-						      rule = TargetingRule.adEnvironment('id12345', 'placement', { adEnvironments: ['app'] });
-						    });
-
-						    it('should instantiate an ad environment targeting rule', () => {
-						      expect(rule.ruleType).toEqual('adEnvironment');
-						    });
-
-						    it('should return the labelized array', () => {
-						      expect(rule.labelize()).toEqual(['In-App']);
-						    });
-
-						    it('should return isAll as false if all options are not available', () => {
-						      expect(rule.isAll()).toEqual(false);
-						    });
-
-						    it('should properly set new', () => {
-						      rule.setRuleSelections(['app', 'site']);
-						      expect(rule.ruleSelections).toEqual(['app', 'site']);
-						      expect(rule.isEdited).toEqual(true);
-						    });
-						  });
-
-						  describe('Ad Environment All tests', () => {
-						    let rule;
-
-						    beforeEach(() => {
-						      rule = TargetingRule.adEnvironment('id12345', 'package', { adEnvironments: ['all'] });
-						    });
-
-						    it('should return isAll as true if all options selected', () => {
-						      expect(rule.isAll()).toEqual(true);
-						    });
-
-						    it('should contain all rule options instead of keyword all from the server when instantiated.', () => {
-						      expect(rule.ruleOptions).toEqual(['site', 'app']);
-						    });
-						  });
-
-						  describe('Device Type', () => {
-						    it('should instantiate a device type targeting rule', () => {
-						      const dtTargetingRule = TargetingRule.deviceType({ deviceTypes: ['Computer'], inheritedFrom: 'package' });
-						      expect(dtTargetingRule.ruleType).toEqual('deviceType');
-						    });
-						  });
-						});
- 					 </code></pre>
- 					 <p>Jest tests with React components are confusing... Test model functionality instead. Maintainable and easy to write.</p>
-					</section>
-					<section>
-					<p>Use Models to remove formatting logic.</p>
-					<pre><code class="hljs" data-trim contenteditable>
-						save() {
-					    if (this.isNew) {
-					      this.update();
-					    } else {
-					      this.create();
-					    }
-					  }
-
-					  create() {
-					    return createTargetingRule(this.targetableType, this.shapeForBackEnd());
-					  }
-
-					  update() {
-					    return updateTargetingRuleStandalone(this.targetableId, this.targetableType, this.shapeForBackEnd());
-					  }
-
-					  delete() {
-					    return destroyTargetingRule(this.targetableId, 'placement', this.ruleType);
-					  }
-
-					  persist(saveable) {
-					    if (saveable) {
-					      this.save();
-					    } else {
-					      this.delete();
-					    }
-					  }
-
-					  shapeForBackEnd() {
-					    const shapedJSON = {
-					      type: `${this.ruleType}TargetingRule`,
-					      adEnvironments: this.ruleSelections,
-					    };
-
-					    return shapedJSON;
-					  }
- 					 </code></pre>
- 					 <p>With models, we can keep Services far away from components.</p>
-				</section>
-				</section>
-
-
-				<section>
-					<section>
-						<h2>Sounds great... But what's the catch?</h2>
-						<iframe class="fragment" src="https://giphy.com/embed/ceUyLAkuV8InK" width="480" height="392" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
-					</section>
-					<section>
-						<h3>Unfortunately, It's not all roses...</h3>
-						<iframe class="fragment" src="https://giphy.com/embed/PsBRTPKG71YVq" width="480" height="480" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
-					</section>
-					<section>
-						<h2>Some things are not as easy as they sound...</h2>
-						<ol>
-							<li class="fragment">Prototypal Inheritance !== Classical Inheritance</li>
-							<li class="fragment">Model state antipattern?</li>
-						</ol>
-
-					</section>
-					<section>
-						<p>Because of Javascript's prototypal inheritance, </p>
-						<p class="fragment">sometimes we have to use factories instead of classical inheritance. Prototypes can get confusing.</p>
-						<p class="fragment">We can use static methods to achieve this.</p>
-					</section>
-
-					<section>
-						<pre><code class="hljs" data-trim contenteditable>
-							static adEnvironment(
-							    targetableId, targetableType, ruleSelections: Array<string>, inheritedFrom, isNew = false,
-							  ) {
-							    const optionsMap: Object<string> = {
-							      site: 'Web',
-							      app: 'In-App',
-							    };
-							    const ruleOptions: Array<string> = Object.keys(optionsMap);
-
-							    return (Object.assign(new TargetingRule(), {
-							      hasOwnRule: targetableType === inheritedFrom,
-							      isNew,
-							      ruleOptions,
-							      ruleName: 'Ad Environment',
-							      ruleType: 'adEnvironment',
-							      ruleSelections: TargetingRule.isAllFromSelections(ruleSelections) ? ruleOptions : [...ruleSelections],
-							      optionsMap,
-							      parentTargetableType: traverseTargetableHierarchyUp(targetableType),
-							      targetableType,
-							      targetableId,
-							      generateLeftHTML: () => {
-							        return (
-							          <div
-							            style={{ fontStyle: 'italic', fontSize: 'small', color: `${variables.gray400}` }}
-							          >
-							            In-app is only available when targeting mobile device types
-							          </div>
-							        );
-							      },
-							    }));
-							  }
- 					 </code></pre>
-					</section>
-
-					<section>
-						<p>For some reason,</p>
-						<p class="fragment">When the model is changed on the prop level,</p>
-						<p class="fragment">it doesn't trigger a rerender.</p>
-						<iframe class="fragment" src="https://giphy.com/embed/6agGMtS4rEVSo" width="480" height="360" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
-					</section>
-
-					<section>
-						<p>Use JS models as read only for now!</p>
-						<pre><code class="hljs" data-trim contenteditable>
-						handleSave = () => {
-					    const { hasOwnRule: isOverriding, ruleSelections } = this.state;
-					    const { rule, parentRule } = this.props;
-					    const { hasOwnRule: hadOwnRule, targetableId, targetableType } = rule;
-					    const inheritingFrom = isOverriding ? rule.targetableType : parentRule.targetableType;
-
-					    const persistableModel = TargetingRule.adEnvironment(
-					      targetableId, targetableType, ruleSelections, inheritingFrom, !hadOwnRule,
-					    );
-					    persistableModel.persist(isOverriding).then(response => {
-					      console.log(response); // remove
-					      // const saveableModel =  targetable.data
-					      // this.props.receivePlacementModels(saveableModel); // targetable or targetable.data ?
-					      this.handleExpansion();
-					    }).catch(error => { // error model?
-					      const errorMessage = error.response.data.errors[0].detail;
-					      this.setState({ snackBarOpen: true, errorMessage });
-					    });
-					  };
- 					 </code></pre>
-					</section>
-
-				</section>
-
-				<section>
-					<h2>Thank you!</h2>
-					<iframe src="https://giphy.com/embed/2HONNTJbRhzKE" width="480" height="370" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
-				</section>
 
 				<section>
 					Shoutout to Reveal.js... Don't use powerpoint
