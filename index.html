@@ -539,39 +539,459 @@
           </section>
 
           <section>
-            
+            <pre><code class="hljs" data-trim contenteditable>
+              class MarketSegment
+                attr_reader :product
+
+                def initialize(args)
+                  @product = args[:product]
+                end
+
+                def demographics
+                  product.demographic.try(:categories) || []
+                end
+
+                def customer_journeys
+                  product.customer_journey.try(:categories) || []
+                end
+
+                def display_customer_journeys
+                  product.customer_journey.try(:display)
+                end
+              end
+					  </code></pre>
           </section>
 
           <section id="fragments">
             <h4>Sometimes you need to invert dependencies.</h4>
-            <p>Reasons to do dependency inversion:</p>
-            <ol>
+            <p class="fragment">Reasons to do dependency inversion:</p>
+            <ol class="fragment">
               <li>some classes are more likely than others to have changes in requirement</li>
+              <li>concrete classes are more likely to change than abstract classes</li>
+              <li>changing a class that has many dependents will result in widespread consequences</li>
             </ol>
+            <p class="fragment">It is better to depend on things that change less often than you do</p>
           </section>
 
+          <section>
+            <h3>If you have dependents, make sure that object is less prone to change. If it has less dependents, it will be more resilient to change.</h3>
+          </section>
 
         </section>
 
 				<section>
 					<section>
-						<h2>Finding Public Interfaces that make sense</h2>
+						<h2>Part 3: Finding Public Interfaces that make sense</h2>
 					</section>
 
-					<section>
-						When you have responsibilities , tell what not HOW. Sandi metz says if a person needs a bicycle,
-						they shouldn't have ot know how to get it, (cleaning, preparing), but should rather interact with the
-						interface to get what it needs.
+					<section id="fragments">
+						<h4>When you go to a restaurant, you don't tell them how to cook.</h4>
+            <iframe class="fragment" src="https://giphy.com/embed/tUnjS7gq1xCpi" width="480" height="480" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/gordon-ramsey-tUnjS7gq1xCpi">via GIPHY</a></p>
 					</section>
+
+          <section>
+            <h4>When a customer is telling the cooks how to cook, it looks like this</h4>
+            <img src="assets/customer_cooks.jpeg" />
+          </section>
+
+          <section>
+            <h4>This is more like ordering off a menu</h4>
+            <img src="assets/proper_kitchen.jpeg" />
+          </section>
+
+          <section>
+            <h4>Public Interfaces in Classes</h4>
+            <ol>
+              <li>Reveal its primary responsibility</li>
+              <li>Are expected to be invoked by others</li>
+              <li>Will not change on a whim</li>
+              <li>Are safe for others to depend on</li>
+              <li>Are thoroughly documented in the tests</li>
+            </ol>
+          </section>
+
+          <section>
+            <h4>Law of Demeter helps find public interfaces</h4>
+            <pre><code class="hljs" data-trim contenteditable>
+              class MarketSegment
+                belongs_to
+
+                def fetch_attr_from_product
+                  attrs = product.get_market_segment_attributes
+                  demographics = attrs[:demographics]
+                  customer_journeys = attrs[:customer_journeys]
+                end
+
+                #have to avoid this.
+                def display_customer_journeys
+                  product.customer_journey.try(:display)
+                end
+              end
+					  </code></pre>
+          </section>
 				</section>
 
 				<section>
 					<section>
-						<h2>Using Duck Typing to create elegant design</h2>
+						<h2>Part 4: Using Duck Typing to create elegant design</h2>
 					</section>
-					<section></section>
+					<section>
+            <h4>What is duck typing?</h4>
+            <iframe src="https://giphy.com/embed/jCOuICpkZRPyg" width="480" height="363" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/cooking-donald-duck-jCOuICpkZRPyg">via GIPHY</a></p>
+          </section>
+
+          <section>
+            <p>if it quacks like a duck, and has a sailor bowtie like a duck, it's a duck.</p>
+            <iframe src="https://giphy.com/embed/t08ZZ86XgtgeA" width="480" height="367" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/acid-july-gifdump-t08ZZ86XgtgeA">via GIPHY</a></p>
+          </section>
+
+          <section>
+            <h4>What a headache...</h4>
+            <pre><code class="hljs" data-trim contenteditable>
+              class Trip
+                def prepare(preparers)
+                  preparers.each do |preparer|
+                    case preparer
+                    when Mechanic
+                      preparer.prepare_bicycles(bicycles)
+                    when TripCoordinator
+                      preparer.buy_food(customers)
+                    when Driver
+                      preparer.gas_up(vehicle)
+                      preparer.fill_water_tank(vehicle)
+                    end
+                  end
+                end
+              end
+					  </code></pre>
+          </section>
+
+          <section>
+            <h4>Where's the duck?</h4>
+            <iframe src="https://giphy.com/embed/YaXcVXGvBQlEI" width="480" height="280" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/facebook-looney-tunes-bugs-bunny-YaXcVXGvBQlEI">via GIPHY</a></p>
+            <p>We have to think CREATIVELY about this. We can't let our predisposed knowledge pollute what the method needs.</p>
+          </section>
+
+          <section>
+            <h4>Ducks in a row</h4>
+            <pre><code class="hljs" data-trim contenteditable>
+              class Trip
+                def prepare(preparers)
+                  preparers.each do |preparer|
+                    preparer.prepare_trip(self)
+                  end
+                end
+              end
+					  </code></pre>
+          </section>
+
+          <section>
+            <h4>Sometimes we have hidden ducks...</h4>
+            <ol>
+              <li>If you're using case statements that switch on class (as seen before)</li>
+              <li>using kind_of? and is_a?</li>
+              <li>or responds_to?</li>
+            </ol>
+          </section>
 				</section>
 
+        <section>
+          <section>
+            <h2> Part 5: Acquiring behavior through inheritance</h2>
+          </section>
+
+          <section>
+            <h4>When do we need inheritance?</h4>
+            <p>It can be pretty straightforward how we can apply inheritance. Multiple embedded types may be an good initial signal.</p>
+            <pre><code class="hljs" data-trim contenteditable>
+              class Bicycle
+                def initialize
+                  @style = args[:style]
+                end
+
+                def spares
+                  if style == :road
+                    { chain: '10 - speed',
+                      tire_size '23',
+                      tape_color: tape_color }
+                  else
+                    { chain: '10 - speed',
+                      tire_size: '2.1',
+                      rear_shock: rear_shock }
+                  end
+                end
+              end
+					  </code></pre>
+
+          </section>
+
+          <section>
+            <h4>"Inheritance provides a way to define two objects as having a relationship such that when the first receives a message that it does not understa,d it automatically forwards or delegates, the message to the second. It's as simple as that"</h4>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+              class Car
+
+              end
+
+              # Obviously this is not correct
+              class Truck < Car
+              end
+					  </code></pre>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+              class Car < Vehicle
+              end
+
+              class Truck < Vehicle
+              end
+					  </code></pre>
+          </section>
+
+          <section>
+            <h4>Use the template method pattern</h4>
+            <pre><code class="hljs" data-trim contenteditable>
+              class Bicycle
+                attr_reader :size, :chain, :tire_size
+
+                def initialize(args={})
+                  @size = args[:size]
+                  @chain = args[:chain || default_chain
+                  @tire_size = args[:tire_size] || default_tire_size
+                end
+
+                def default_chain
+                  '10-speed'
+                end
+
+              end
+
+              class RoadBike < Bicycle
+                def default_tire_size
+                  '23'
+                end
+              end
+
+              class MountainBike < Bicycle
+                def default_tire_size
+                  '2.1'
+                end
+              end
+					  </code></pre>
+          </section>
+
+          <section>
+             <pre><code class="hljs" data-trim contenteditable>
+              class Bicycle
+                attr_reader :size, :chain, :tire_size
+
+                def initialize(args={})
+                  @size = args[:size]
+                  @chain = args[:chain || default_chain
+                  @tire_size = args[:tire_size] || default_tire_size
+                end
+
+                def default_chain
+                  '10-speed'
+                end
+
+                def default_tire_size
+                  raise NotImplementedError,
+                    "This #{self.class} cannot respond to:"
+                end
+
+              end
+					  </code></pre>
+          </section>
+
+          <section>
+            <h4>Decouple subclasses using hook messages</h4>
+
+            <pre><code class="hljs" data-trim contenteditable>
+              class Bicycle
+                attr_reader :size, :chain, :tire_size
+
+                def initialize(args={})
+                  @size = args[:size]
+                  @chain = args[:chain || default_chain
+                  @tire_size = args[:tire_size] || default_tire_size
+
+                  post_initialize(args)
+                end
+
+                def post_initialize(args)
+                  nil
+                end
+
+                def default_chain
+                  '10-speed'
+                end
+
+                def default_tire_size
+                  raise NotImplementedError,
+                    "This #{self.class} cannot respond to:"
+                end
+              end
+
+              class RoadBike < Bicycle
+                def post_initialize(args)
+                  @tape_color = args[:tape_color]
+                end
+              end
+					  </code></pre>
+          </section>
+
+        </section>
+
+        <section>
+          <section>
+            <h2>Part 6: using Modules to share role behavior</h2>
+          </section>
+
+          <section id="fragments">
+            <h4>Modules are incredibly powerful tool to use. How can we use them to find roles?</h4>
+            <p>Roles may reveal themselves immediately or over time.</p>
+            <p class="fragment">When we discussed preparers in the duck typing part, we have to recognize that those entities can have a Prepareable interface.</p>
+          </section>
+
+          <section>
+            <H4>Possibilities with modules are very large and complex</H4>
+            <p>Objects can respond to messages of</p>
+            <ol>
+              <li>those it implements</li>
+              <li>those implemented in all objects above it in the hierarchy</li>
+              <li>those implemented in any module that has been added in it</li>
+              <li>those implemented in all modules added to any object above it in the hierarchy</li>
+            </ol>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+              module Schedulable
+                attr_writer :schedule
+
+                def schedule
+                  @schedule ||= ::Schedule.new
+                end
+
+                def schedulable?(start_date, end_date)
+                  !scheduled?(start_date - lead days, end_date)
+                end
+
+                def scheduled?(start_date, end_date)
+                  schedule.scheduled?(self, start_date, end_date)
+                end
+
+                #to be overridden by includer
+                def lead_days
+                  0
+                end
+              end
+					  </code></pre>
+          </section>
+
+          <section id="fragments">
+            <h4>What's to stop us from doing....</h4>
+            <pre><code class="hljs" data-trim contenteditable>
+              module Countable
+                attr_writer :count
+
+                def count
+                end
+
+                def track_counts
+                end
+              end
+					  </code></pre>
+          </section>
+
+          <section>
+            <h4>Method lookup path</h4>
+            <img src="assets/module.png" />
+          </section>
+
+          <section>
+            <h4>With great power comes great... Alright I won't do this to you</h4>
+            <p>However we need to recognize that there are dangers when writing modules. We must write inheritable code.</p>
+            <ol>
+              <li>Recognize the antipatterns (type, category)</li>
+              <li>Insist on abstraction</li>
+              <li>"Honor the contract"</li>
+            </ol>
+          </section>
+
+        </section>
+
+        <section>
+
+          <section>
+            <H2>Part 7: Combining Ojbects with Composition</H2>
+          </section>
+
+          <section>
+          <pre><code class="hljs" data-trim contenteditable>
+            class Bicycle
+              attr_reader :size, :parts
+
+              def initialize(args={})
+                @size = args[:size]
+                @parts = args[:parts]
+              end
+
+              def spares
+                parts.spares
+              end
+            end
+
+            require 'forwardable'
+            class Parts
+              extend Forwardable
+              def_delegators :@parts, :size, :each
+              include Enumerable
+
+              def initialize(parts)
+                @parts = parts
+              end
+
+              def spares
+                select { |part| part.needs_spare }
+              end
+            end
+
+            require 'ostruct'
+            module PartsFactory
+              def self.build(config, parts_class = Parts)
+
+                parts_class.new(config.collect { |part_config|
+                  create_part(part_config)
+                })
+              end
+
+              def self.create_part(part_config)
+                OpenStruct.new(
+                  name: part_config[0],
+                  description: part_config[1],
+                  needs_spare: part_config.fetch(2, true)
+              end
+
+            end
+
+            road_config = [
+              ['chain', '10-speed'],
+              ['tire_size', '23'],
+              ['tape_color', 'red']
+            ]
+
+
+          </code></pre>
+          </section>
+
+
+
+        </section>
 
 
 				<section>
